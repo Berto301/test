@@ -30,6 +30,7 @@
         "vue-loader": "^16.8.3"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-free": "^6.4.0",
         "@headlessui/vue": "^1.7.13",
         "@tailwindcss/forms": "^0.5.3",
         "@tailwindcss/typography": "^0.5.9",

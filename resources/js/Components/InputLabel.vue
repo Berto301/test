@@ -1,12 +1,16 @@
 <script setup>
 defineProps({
     value: String,
+    required:{
+        type: Boolean,
+        default:false
+    }
 });
 </script>
 
 <template>
-    <label class="block font-medium text-sm text-gray-700">
+    <label :class="` font-medium text-sm text-gray-700 ${required ? 'flex items-center space-x-4': 'block'}`">
         <span v-if="value">{{ value }}</span>
-        <span v-else><slot /></span>
+        <i class="fa-solid fa-lock" v-if="value && required" style="color: #dc3545;"></i>
     </label>
 </template>
