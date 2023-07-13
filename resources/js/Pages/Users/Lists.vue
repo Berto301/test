@@ -2,34 +2,122 @@
 import AppLayout from "@/Layouts/AppLayout.vue";
 import SuccessButton from "@/Components/SuccessButton.vue";
 import DangerButton from "@/Components/DangerButton.vue";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import {
   Listbox,
   ListboxButton,
   ListboxOptions,
   ListboxOption,
   Switch,
+  TransitionRoot,
+  TransitionChild,
+  Dialog,
 } from "@headlessui/vue";
+
 import ModalAddUpdateUser from "./ModalAddUpdateUser.vue";
 import ModalConfirmation from "./ModalConfirmation.vue";
+import moment from "moment-timezone";
+import { Inertia } from "@inertiajs/inertia";
+import UsersServices from "../../service/Users.service";
+import { isEqual } from "lodash";
 
-
+const props = defineProps({
+  user: Object,
+  users: Array,
+});
 const statusLists = [
-  { id: 1, name: "Actif", key: "active" },
-  { id: 2, name: "Inactif", key: "inactive" },
+  {id: 0, name: "Selectionnez le status", key: null},
+  { id: 1, name: "Actif", key: 1 },
+  { id: 2, name: "Inactif", key: 0 },
 ];
 const selectedStatus = ref(statusLists[0]);
-const enabled = ref(false);
-const openModalUser = ref(false)
-const openModalDeleteUser = ref(false)
-const openModal = () => openModalUser.value = true
-const closeModal = () => openModalUser.value = false
-const openModalDelete = () => openModalDeleteUser.value = true
-const closeModalDelete = () => openModalDeleteUser.value = false
+
+
+const openModalUser = ref(false);
+const openModalDeleteUser = ref(false);
+const selectedUser = ref(null);
+const usersProps = ref(props?.users|| []);
+const users = ref(usersProps.value)
+const state = reactive({
+  //users: props?.users,
+  searchName:''
+});
+let {   searchName } = state;
+
+const handleModalUser = (e, user) => {
+  e.preventDefault();
+  selectedUser.value = user ? { ...user } : null;
+  openModalUser.value = true;
+};
+const HandleCloseModalUser = () => {
+  selectedUser.value = null;
+  openModalUser.value = false;
+};
+
+const openModalDelete =(e, user) => {
+  e.preventDefault();
+  selectedUser.value = user ? { ...user } : null;
+  openModalDeleteUser.value = true;
+};
+const closeModalDelete = () => {
+  selectedUser.value = null;
+  openModalDeleteUser.value = false;
+};
+
+const saveUser = async (dataUser) => {
+  const data = {
+    ...dataUser,
+    civility: dataUser?.civility?.key,
+  };
+
+
+  if (!dataUser?.id) {
+    await UsersServices.create(data).then((reponse) => {
+      if (reponse?.user) {
+        users?.value?.push(reponse?.user);
+        HandleCloseModalUser();
+      }
+    });
+  } else {
+    data.id = dataUser.id;
+    const reponse =  await onUpdateUser(user)
+    if (reponse?.user) {
+        HandleCloseModalUser();
+      }
+  }
+  if(dataUser?.photo){
+    console.log({dataUser})
+   await Inertia.put(route("user-profile-information.update"))
+  }
+  
+};
+const onEnableUser = async (user) => await onUpdateUser({...user,status: user?.status===1? 0: 1})
+
+const onUpdateUser = async (data) => await UsersServices.update(data).then((reponse) => {
+      if (reponse?.user) {
+        users.value = users.value.map((_user) => {
+          if (_user.id === reponse.user.id) _user = { ...reponse.user };
+          return _user;
+        });
+        return reponse
+      }
+    }).catch((err)=> null); 
+
+const deleteUser = (id) => UsersServices.deleteById(id).then((reponse)=>{
+  closeModalDelete()
+})
+.catch((err)=>console.log(err))
+const onFilter = ()=> {
+  const tempUsers = [...usersProps.value]
+  users.value = (!searchName && isEqual(selectedStatus.value?.key,null)) ? tempUsers :  tempUsers.filter((user)=>{
+   if(searchName && ((user?.name?.toLowerCase().match(searchName.toLocaleLowerCase())) || (user?.firstname?.toLowerCase().match(searchName.toLocaleLowerCase())))) return true
+   if(isEqual(user.status,selectedStatus.value.key)) return true
+  })
+}
 </script>
 
 <template>
-  <AppLayout title="Dashboard">
+  <AppLayout title="Dashboard" :user="user">
     <template #header>
       <h2 class="font-semibold text-xl text-gray-900 leading-tight">
         User - lists
@@ -53,7 +141,11 @@ const closeModalDelete = () => openModalDeleteUser.value = false
       </div>
     </div>
     <div class="w-56">
-      <SuccessButton class="flex items-center space-x-2" type="button" @click="openModal">
+      <SuccessButton
+        class="flex items-center space-x-2"
+        type="button"
+        @click="handleModalUser"
+      >
         <span class="text-whiite text-sm"> Ajouter un utilisateur</span>
         <i class="fa fa-plus"></i>
       </SuccessButton>
@@ -68,6 +160,7 @@ const closeModalDelete = () => openModalDeleteUser.value = false
           <input
             type="text"
             class="p-4 border border-solid border-[#ced4da] text-gray-900 text-sm h-9 bg-white rounded"
+            v-model="searchName"
           />
         </div>
         <div class="flex space-x-4 items-center">
@@ -125,50 +218,51 @@ const closeModalDelete = () => openModalDeleteUser.value = false
           </div>
         </div>
         <div class="w-72">
-          <SuccessButton class="ml-0 text-whiite text-sm" type="button">
+          <SuccessButton class="ml-0 text-whiite text-sm" type="button" @click="onFilter">
             Rechercher
           </SuccessButton>
         </div>
       </div>
     </div>
-    <div class="w-full flex justify-between bg-white p-4">
+    <div
+      class="w-full flex justify-between bg-white p-4"
+      v-if="users?.length"
+      v-for="user in users"
+      :key="user?.id"
+    >
       <div class="w-1/5 flex justify-center items-center">
         <img
           :src="`${
             user?.profile_photo_path
               ? `storage/${user?.profile_photo_path}`
-              : user?.profile_photo_url
-              ? user?.profile_photo_url
               : `images/profile.png`
           }`"
           alt="user-image"
           class="rounded-full h-20 w-20 object-cover"
         />
       </div>
-      <div class="w-1/5 text-gray-900 font-semibold text-base">Berto</div>
+      <div class="w-1/5 text-gray-900 font-semibold text-base">
+        {{ user?.name }} {{ user?.firstname }}
+      </div>
       <div class="w-1/5 flex flex-col space-y-4">
         <div class="flex items-center">
           <Switch
-            v-model="enabled"
-            :class="
-              enabled
-                ? 'bg-[#49c5b6] border-[#49c5b6]'
-                : 'bg-[#dc3545] border-[#dc3545]'
-            "
-            class="relative inline-flex h-[38px] w-[74px] shrink-0 cursor-pointer rounded border-2 border-[#49c5b6] transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+           
+            @click="()=>onEnableUser(user)"
+            :class="`${ user.status===1 ? 'bg-[#49c5b6] border-[#49c5b6]' : 'bg-[#dc3545] border-[#dc3545]'} ${ user.id===props.user.id ? 'cursor-none pointer-events-none' : 'cursor-pointer'} relative inline-flex h-[38px] w-[74px] shrink-0  rounded border-2 border-[#49c5b6] transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`"
           >
             <span
               aria-hidden="true"
-              :class="enabled ? `translate-x-9 ` : `translate-x-0`"
+              :class="user.status===1 ? `translate-x-9 ` : `translate-x-0`"
               class="pointer-events-none inline-block h-[34px] w-[34px] transform rounded shadow-lg bg-white ring-0 transition duration-200 ease-in-out"
             />
             <span
-              :class="`absolute ${enabled ? 'left-px' : 'right-px'} -translate-y-1/2  top-1/2 text-white uppercase text-sm font-semibold`"
-            
+              :class="`absolute ${
+                user.status===1 ? 'left-px' : 'right-px'
+              } -translate-y-1/2  top-1/2 text-white uppercase text-sm font-semibold`"
             >
-              {{ enabled ? 'ON' :'OFF' }}
+              {{ user.status===1 ? "ON" : "OFF" }}
             </span>
-            
           </Switch>
           <span
             class="text-[#49c5b6] text-sm font-semibold uppercase block ml-4"
@@ -178,47 +272,128 @@ const closeModalDelete = () => openModalDeleteUser.value = false
 
         <span class="text-sm text-gray-900 font-semibold"
           >Date de création de compte :
-          <span class="font-normal">01/11/2023</span></span
+          <span class="font-normal"
+            >{{ moment(new Date(user?.created_at)).format("DD/MM/YYYY") }}
+          </span></span
         >
       </div>
       <div class="w-1/5 flex flex-col space-y-4">
         <div class="flex items-center space-x-4 text-gray-900">
           <i class="fa fa-envelope" style="color: #49c5b6"></i>
-          <span class="font-normal text-sm text-[#49c5b6]"
-            >berto@gmail.com</span
-          >
+          <span class="font-normal text-sm text-[#49c5b6]">{{
+            user?.email
+          }}</span>
         </div>
         <div class="flex items-center space-x-4 text-gray-900">
           <i class="fa fa-phone"></i>
-          <span class="font-normal text-sm">0346628361</span>
+          <span class="font-normal text-sm">{{ user?.phone }}</span>
         </div>
         <div class="flex items-center space-x-4 text-gray-900">
           <i class="fa fa-mobile"></i>
-          <span class="font-normal text-sm">0346628361</span>
+          <span class="font-normal text-sm">{{ user?.mobile }}</span>
         </div>
       </div>
       <div class="w-1/5 flex flex-col space-y-4">
         <div class="w-1/2 ml-12">
-          <SuccessButton class="ml-0 text-whiite text-sm" type="button" @click="openModal">
+          <SuccessButton
+            class="ml-0 text-whiite text-sm"
+            type="button"
+            @click="(e) => handleModalUser(e, user)"
+          >
             Editer
           </SuccessButton>
         </div>
         <div class="w-1/2 ml-12">
-          <DangerButton class="ml-0" type="button" @click="openModalDelete"> Supprimer </DangerButton>
+          <DangerButton
+            class="ml-0"
+            type="button"
+            @click="(e)=>openModalDelete(e,user)"
+            v-if="!isEqual(user.id, props.user.id)"
+          >
+            Supprimer
+          </DangerButton>
         </div>
       </div>
-      <!--Modal Update / Add User -->
-      <ModalAddUpdateUser 
-        :click-modal="closeModal"
-        :open="openModalUser"
-        :save="closeModal"
-      />
-      <!--Modal Update / Add User -->
-      <ModalConfirmation 
-       :open="openModalDeleteUser"
-       :click-modal="closeModalDelete"
-       :save="closeModalDelete"
-      />
     </div>
+    <div v-else class="text-gray-900 text-sm font-semibold w-full text-center">
+      Aucun resultat
+    </div>
+    <!--Modal Update / Add User -->
+    <TransitionRoot appear :show="openModalUser" as="template">
+      <Dialog as="div" class="relative z-10">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div
+            class="flex min-h-full items-start justify-center p-4 pt-20 text-center"
+          >
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <ModalAddUpdateUser
+                @click-modal="HandleCloseModalUser"
+                @save="saveUser"
+                :user="selectedUser"
+              />
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
+    <!--Modal Delete User -->
+    <TransitionRoot appear :show="openModalDeleteUser" as="template">
+      <Dialog as="div" class="relative z-10">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div
+            class="flex min-h-full items-center justify-center p-4  text-center"
+          >
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <ModalConfirmation
+                @click-modal="closeModalDelete"
+                @save="deleteUser"
+                :user="selectedUser"
+              />
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </AppLayout>
 </template>

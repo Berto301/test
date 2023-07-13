@@ -2,17 +2,16 @@
 import Navbar from "./Navbar.vue";
 import Sidebar from "./Sidebar.vue";
 
-defineProps({
-  title: String,
+const props = defineProps({
   user: Object,
-  notifications: Array,
 });
+
 </script>
 
 <template>
   <div>
     <!-- Topbar Start -->
-    <Navbar :user="user" :notifications="notifications" />
+    <Navbar />
     <!-- end Topbar -->
 
     <!-- Start Content-->
@@ -20,7 +19,7 @@ defineProps({
       <!-- Begin page -->
       <div class="wrapper bg-[#f4f7f6]">
         <!-- ========== Left Sidebar Start ========== -->
-         <Sidebar />
+         <Sidebar :user="user" />
         <!-- Left Sidebar End -->
 
         <div class="w-[calc(100%-260px)] float-right relative mt-16 !bg-[#f4f7f6]">

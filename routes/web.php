@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,8 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Users/Lists');
-    })->name('users-lists');
+    Route::get('/dashboard', [UserController::class , 'getLists'])->name('users-lists');
+    Route::post('/users', [UserController::class , 'create'])->name('users-create');
+    Route::patch('/users/{data}', [UserController::class , 'update'])->name('users-update');
+    Route::delete('/users/{data}', [UserController::class , 'deleteUser'])->name('users-delete');
 });

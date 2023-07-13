@@ -21,9 +21,9 @@ class JetstreamServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->configurePermissions();
+        //$this->configurePermissions();
 
-        Jetstream::deleteUsersUsing(DeleteUser::class);
+        //Jetstream::deleteUsersUsing(DeleteUser::class);
     }
 
     /**

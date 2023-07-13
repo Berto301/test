@@ -2,8 +2,8 @@
 import { Link } from "@inertiajs/inertia-vue3";
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 
-defineProps({
-  team: Object,
+ defineProps({
+  user: Object,
 });
 
 </script>
@@ -12,13 +12,13 @@ defineProps({
   <div class="w-64 h-full float-left mt-16 fixed left-1 bg-[#f4f7f6] z-10 space-y-4 shadow-lg">
     <div class="m-5 flex items-center justify-between space-x-4">
       <img
-          :src="`${user?.profile_photo_path ? `storage/${user?.profile_photo_path}` : user?.profile_photo_url ? user?.profile_photo_url : `images/profile.png` }`"
+          :src="`${user?.profile_photo_path ? `storage/${user?.profile_photo_path}` : `images/profile.png` }`"
           alt="user-image"
           class="rounded-full h-20 w-20 object-cover"
       />
-      <div class="flex flex-col space-y-2 text-sm ">
-        <div class=" text-[#5a5a5a]">Bienvenue,</div>
-        <div class=" text-[#6d6d63] font-semibold ">Mr Hajatiana Roberto</div>
+      <div class="flex flex-col space-y-2 text-sm text-gray-900">
+        <div class="font-normal">Bienvenue,</div>
+        <div class="font-semibold">Mr {{ user?.name }} {{ user?.firstname  }}</div>
       </div>
     </div>
     <div class="flex flex-wrap pl-0 mb-0 ">
