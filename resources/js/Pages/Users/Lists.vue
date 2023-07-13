@@ -80,7 +80,7 @@ const saveUser = async (dataUser) => {
     });
   } else {
     data.id = dataUser.id;
-    const reponse =  await onUpdateUser(user)
+    const reponse =  await onUpdateUser(data)
     if (reponse?.user) {
         HandleCloseModalUser();
       }
