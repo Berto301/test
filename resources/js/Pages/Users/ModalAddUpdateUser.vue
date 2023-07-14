@@ -15,7 +15,7 @@ import DangerButton from "@/Components/DangerButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
-import { ref, watch, watchEffect } from "vue";
+import { ref } from "vue";
 
 const props = defineProps({
   user: Object,
@@ -62,7 +62,7 @@ const clearPhotoFileInput = () => {
   }
 };
 if (props?.user?.id) {
-  userInfo = { ...props?.user };
+  userInfo = {...userInfo, ...props?.user };
   userInfo.civility = civilities?.find(
     (_civility) => _civility.key === props.user.civility
   );

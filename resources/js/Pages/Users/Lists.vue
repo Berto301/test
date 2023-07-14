@@ -86,8 +86,19 @@ const saveUser = async (dataUser) => {
       }
   }
   if(dataUser?.photo){
-    console.log({dataUser})
-   await Inertia.put(route("user-profile-information.update"))
+    const form = new FormData()
+    form.append("photo",dataUser?.photo)
+    dataUser.put(route('user-profile-information.update',{
+      forceFormData:true,
+      name:dataUser.name,
+      email:dataUser.email,
+      photo:form
+    }), {
+        errorBag: 'updateProfileInformation',
+        preserveScroll: true
+    });
+   
+   debugger
   }
   
 };
