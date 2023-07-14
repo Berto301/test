@@ -99,7 +99,7 @@ const submit =  () => {
         >X</span
       >
     </DialogTitle>
-    <form @submit.prevent="submit">
+    <form @submit.prevent="submit" enctype="multipart/form-data">
       <div class="mt-4 flex">
         <div class="flex flex-col space-y-4 w-1/3 items-center justify-center">
           <input
@@ -113,7 +113,7 @@ const submit =  () => {
             <img
               :src="`${
                 user?.profile_photo_path
-                  ? `storage/${user?.profile_photo_path}`
+                  ? user?.profile_photo_path
                   : `images/profile.png`
               }`"
               alt="image"

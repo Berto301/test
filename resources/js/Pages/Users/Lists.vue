@@ -20,29 +20,29 @@ import moment from "moment-timezone";
 import { Inertia } from "@inertiajs/inertia";
 import UsersServices from "../../service/Users.service";
 import { isEqual } from "lodash";
+import axios from "axios";
 
 const props = defineProps({
   user: Object,
   users: Array,
 });
 const statusLists = [
-  {id: 0, name: "Selectionnez le status", key: null},
+  { id: 0, name: "Selectionnez le status", key: null },
   { id: 1, name: "Actif", key: 1 },
   { id: 2, name: "Inactif", key: 0 },
 ];
 const selectedStatus = ref(statusLists[0]);
 
-
 const openModalUser = ref(false);
 const openModalDeleteUser = ref(false);
 const selectedUser = ref(null);
-const usersProps = ref(props?.users|| []);
-const users = ref(usersProps.value)
+const usersProps = ref(props?.users || []);
+const users = ref(usersProps.value);
 const state = reactive({
   //users: props?.users,
-  searchName:''
+  searchName: "",
 });
-let {   searchName } = state;
+let { searchName } = state;
 
 const handleModalUser = (e, user) => {
   e.preventDefault();
@@ -54,7 +54,7 @@ const HandleCloseModalUser = () => {
   openModalUser.value = false;
 };
 
-const openModalDelete =(e, user) => {
+const openModalDelete = (e, user) => {
   e.preventDefault();
   selectedUser.value = user ? { ...user } : null;
   openModalDeleteUser.value = true;
@@ -69,8 +69,20 @@ const saveUser = async (dataUser) => {
     ...dataUser,
     civility: dataUser?.civility?.key,
   };
-
-
+  let imageURL = null;
+  if (dataUser?.photo) {
+    const formData = new FormData();
+    formData.append("photo", dataUser.photo);
+    const rep = await axios.post(`/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      errorBag: "updateProfileInformation",
+      preserveScroll: true,
+    });
+    if (rep?.data?.url_path) imageURL = rep.data.url_path;
+  }
+  data.profile_photo_path = imageURL;
   if (!dataUser?.id) {
     await UsersServices.create(data).then((reponse) => {
       if (reponse?.user) {
@@ -80,51 +92,51 @@ const saveUser = async (dataUser) => {
     });
   } else {
     data.id = dataUser.id;
-    const reponse =  await onUpdateUser(data)
+    const reponse = await onUpdateUser(data);
     if (reponse?.user) {
-        HandleCloseModalUser();
-      }
+      HandleCloseModalUser();
+    }
   }
-  if(dataUser?.photo){
-    const form = new FormData()
-    form.append("photo",dataUser?.photo)
-    dataUser.put(route('user-profile-information.update',{
-      forceFormData:true,
-      name:dataUser.name,
-      email:dataUser.email,
-      photo:form
-    }), {
-        errorBag: 'updateProfileInformation',
-        preserveScroll: true
-    });
-   
-   debugger
-  }
-  
 };
-const onEnableUser = async (user) => await onUpdateUser({...user,status: user?.status===1? 0: 1})
+const onEnableUser = async (user) =>
+  await onUpdateUser({ ...user, status: user?.status === 1 ? 0 : 1 });
 
-const onUpdateUser = async (data) => await UsersServices.update(data).then((reponse) => {
+const onUpdateUser = async (data) =>
+  await UsersServices.update(data)
+    .then((reponse) => {
       if (reponse?.user) {
         users.value = users.value.map((_user) => {
           if (_user.id === reponse.user.id) _user = { ...reponse.user };
           return _user;
         });
-        return reponse
+        return reponse;
       }
-    }).catch((err)=> null); 
+    })
+    .catch((err) => null);
 
-const deleteUser = (id) => UsersServices.deleteById(id).then((reponse)=>{
-  closeModalDelete()
-})
-.catch((err)=>console.log(err))
-const onFilter = ()=> {
-  const tempUsers = [...usersProps.value]
-  users.value = (!searchName && isEqual(selectedStatus.value?.key,null)) ? tempUsers :  tempUsers.filter((user)=>{
-   if(searchName && ((user?.name?.toLowerCase().match(searchName.toLocaleLowerCase())) || (user?.firstname?.toLowerCase().match(searchName.toLocaleLowerCase())))) return true
-   if(isEqual(user.status,selectedStatus.value.key)) return true
-  })
-}
+const deleteUser = (id) =>
+  UsersServices.deleteById(id)
+    .then((reponse) => {
+      closeModalDelete();
+    })
+    .catch((err) => console.log(err));
+const onFilter = () => {
+  const tempUsers = [...usersProps.value];
+  users.value =
+    !searchName && isEqual(selectedStatus.value?.key, null)
+      ? tempUsers
+      : tempUsers.filter((user) => {
+          if (
+            searchName &&
+            (user?.name?.toLowerCase().match(searchName.toLocaleLowerCase()) ||
+              user?.firstname
+                ?.toLowerCase()
+                .match(searchName.toLocaleLowerCase()))
+          )
+            return true;
+          if (isEqual(user.status, selectedStatus.value.key)) return true;
+        });
+};
 </script>
 
 <template>
@@ -229,7 +241,11 @@ const onFilter = ()=> {
           </div>
         </div>
         <div class="w-72">
-          <SuccessButton class="ml-0 text-whiite text-sm" type="button" @click="onFilter">
+          <SuccessButton
+            class="ml-0 text-whiite text-sm"
+            type="button"
+            @click="onFilter"
+          >
             Rechercher
           </SuccessButton>
         </div>
@@ -245,7 +261,7 @@ const onFilter = ()=> {
         <img
           :src="`${
             user?.profile_photo_path
-              ? `storage/${user?.profile_photo_path}`
+              ? user?.profile_photo_path
               : `images/profile.png`
           }`"
           alt="user-image"
@@ -258,21 +274,28 @@ const onFilter = ()=> {
       <div class="w-1/5 flex flex-col space-y-4">
         <div class="flex items-center">
           <Switch
-           
-            @click="()=>onEnableUser(user)"
-            :class="`${ user.status===1 ? 'bg-[#49c5b6] border-[#49c5b6]' : 'bg-[#dc3545] border-[#dc3545]'} ${ user.id===props.user.id ? 'cursor-none pointer-events-none' : 'cursor-pointer'} relative inline-flex h-[38px] w-[74px] shrink-0  rounded border-2 border-[#49c5b6] transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`"
+            @click="() => onEnableUser(user)"
+            :class="`${
+              user.status === 1
+                ? 'bg-[#49c5b6] border-[#49c5b6]'
+                : 'bg-[#dc3545] border-[#dc3545]'
+            } ${
+              user.id === props.user.id
+                ? 'cursor-none pointer-events-none'
+                : 'cursor-pointer'
+            } relative inline-flex h-[38px] w-[74px] shrink-0  rounded border-2 border-[#49c5b6] transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`"
           >
             <span
               aria-hidden="true"
-              :class="user.status===1 ? `translate-x-9 ` : `translate-x-0`"
+              :class="user.status === 1 ? `translate-x-9 ` : `translate-x-0`"
               class="pointer-events-none inline-block h-[34px] w-[34px] transform rounded shadow-lg bg-white ring-0 transition duration-200 ease-in-out"
             />
             <span
               :class="`absolute ${
-                user.status===1 ? 'left-px' : 'right-px'
+                user.status === 1 ? 'left-px' : 'right-px'
               } -translate-y-1/2  top-1/2 text-white uppercase text-sm font-semibold`"
             >
-              {{ user.status===1 ? "ON" : "OFF" }}
+              {{ user.status === 1 ? "ON" : "OFF" }}
             </span>
           </Switch>
           <span
@@ -318,7 +341,7 @@ const onFilter = ()=> {
           <DangerButton
             class="ml-0"
             type="button"
-            @click="(e)=>openModalDelete(e,user)"
+            @click="(e) => openModalDelete(e, user)"
             v-if="!isEqual(user.id, props.user.id)"
           >
             Supprimer
@@ -385,7 +408,7 @@ const onFilter = ()=> {
 
         <div class="fixed inset-0 overflow-y-auto">
           <div
-            class="flex min-h-full items-center justify-center p-4  text-center"
+            class="flex min-h-full items-center justify-center p-4 text-center"
           >
             <TransitionChild
               as="template"

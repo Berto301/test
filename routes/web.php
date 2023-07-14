@@ -31,4 +31,5 @@ Route::middleware([
     Route::post('/users', [UserController::class , 'create'])->name('users-create');
     Route::patch('/users/{data}', [UserController::class , 'update'])->name('users-update');
     Route::delete('/users/{data}', [UserController::class , 'deleteUser'])->name('users-delete');
+    Route::post('/upload', [UserController::class , 'updateProfile'])->name('update-profile');
 });

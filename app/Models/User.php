@@ -31,7 +31,8 @@ class User extends Authenticatable
         'status',
         'mobile',
         'phone',
-        'role'
+        'role',
+        'profile_photo_path'
     ];
 
     /**

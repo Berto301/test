@@ -12,7 +12,7 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
   <div class="w-64 h-full float-left mt-16 fixed left-1 bg-[#f4f7f6] z-10 space-y-4 shadow-lg">
     <div class="m-5 flex items-center justify-between space-x-4">
       <img
-          :src="`${user?.profile_photo_path ? `storage/${user?.profile_photo_path}` : `images/profile.png` }`"
+          :src="`${user?.profile_photo_path ?user?.profile_photo_path : `images/profile.png` }`"
           alt="user-image"
           class="rounded-full h-20 w-20 object-cover"
       />

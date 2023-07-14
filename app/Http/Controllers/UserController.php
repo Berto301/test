@@ -35,7 +35,9 @@ class UserController  extends Controller
             'mobile' => 'required|string|max:255',
             'phone' => 'required|string|max:255',
             'role' => 'required|string|max:255',
+            'profile_photo_path'=> 'nullable|string|max:255'
         ]);
+        // $photo = $this->updateProfile($request);
     
         $user_created = User::create([
             'name' => $request->name,
@@ -46,6 +48,7 @@ class UserController  extends Controller
             'mobile' => $request->mobile,
             'phone' => $request->phone,
             'role' => $request->role,
+            'profile_photo_path'=>$request->profile_photo_path
         ]);
     
     
@@ -66,9 +69,11 @@ class UserController  extends Controller
             'mobile' => 'required|string|max:255',
             'phone' => 'required|string|max:255',
             'role' => 'required|string|max:255',
-            'id'=>'required'
+            'id'=>'required',
+            'profile_photo_path'=> 'nullable|string|max:255'
         ]);
-
+        // $photo = $this->updateProfile($request);
+       
         $user = User::findOrFail($request->id);
 
         $user->update([
@@ -80,6 +85,7 @@ class UserController  extends Controller
             'mobile' => $request->mobile,
             'phone' => $request->phone,
             'role' => $request->role,
+            'profile_photo_path'=>$request->profile_photo_path
         ]);
 
         return response()->json([
@@ -93,6 +99,23 @@ class UserController  extends Controller
         return response()->json([
             
             'user' => $user
+        ], Response::HTTP_OK);
+    }
+
+    public function updateProfile(Request $request)
+    {  
+        if ($request->hasFile('photo')) {
+            $request->validate([
+                'photo' => 'nullable|mimes:jpeg,png,jpg,gif|max:2048',]);
+            $image = $request->file('photo');
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('images/profiles'), $imageName);
+            return response()->json([
+                'url_path' => 'images/profiles/' . $imageName,
+            ], Response::HTTP_OK);
+        }
+        return response()->json([
+            'url_path' => null
         ], Response::HTTP_OK);
     }
 }
