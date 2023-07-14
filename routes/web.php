@@ -21,6 +21,8 @@ Route::get('/', function () {
         'canResetPassword' => true,
     ]);
 });
+Route::post('/reset-password', [UserController::class , 'resetPassword'])->name('reset-password');
+
 
 Route::middleware([
     'auth:sanctum',
@@ -32,4 +34,5 @@ Route::middleware([
     Route::patch('/users/{data}', [UserController::class , 'update'])->name('users-update');
     Route::delete('/users/{data}', [UserController::class , 'deleteUser'])->name('users-delete');
     Route::post('/upload', [UserController::class , 'updateProfile'])->name('update-profile');
+    Route::post('/changePassword', [UserController::class , 'changePassword'])->name('change-password');
 });

@@ -15,7 +15,7 @@ const form = useForm({
 });
 
 const submit = () => {
-  form.post(route("password.email"));
+  form.post(route("reset-password"));
 };
 </script>
 
@@ -25,9 +25,8 @@ const submit = () => {
       <Head title="Forgot Password" />
 
       <div class="mb-4 text-sm text-gray-600">
-        Forgot your password? No problem. Just let us know your email address
-        and we will email you a password reset link that will allow you to
-        choose a new one.
+        Vous avez oublié votre mot de passe ? Pas de problème. Il vous suffit de nous communiquer votre adresse électronique
+        et nous vous enverrons un email contenant votre mot de passe.
       </div>
 
       <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
@@ -54,7 +53,7 @@ const submit = () => {
             :class="{ 'opacity-25': form.processing }"
             :disabled="form.processing"
           >
-            Email Password Reset Link
+            Envoyer
           </PrimaryButton>
         </div>
       </form>

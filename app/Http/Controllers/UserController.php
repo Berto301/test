@@ -10,7 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Hash;
 use App\Actions\Jetstream\DeleteUser;
-
+use Mail;
+use App\Mail\ResetPassword;
+use App\Mail\SendPassword;
+use Illuminate\Support\Str;
 class UserController  extends Controller
 {
    
@@ -117,5 +120,50 @@ class UserController  extends Controller
         return response()->json([
             'url_path' => null
         ], Response::HTTP_OK);
+    }
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+        ]);
+        $password = Str::random(8);
+
+        $mailData = [
+            'password' => $password,
+            'host' => env('APP_HOST', '')
+        ];
+
+        Mail::to($request->email)->send(new ResetPassword($mailData));
+
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            $user->password = Hash::make($password);
+            $user->save();
+        }
+
+        return redirect()->back();
+    }
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+            'id'=>'required'
+        ]);
+        $password = Str::random(8);
+
+        $mailData = [
+            'password' => $password,
+            'host' => env('APP_HOST', '')
+        ];
+        Mail::to($request->email)->send(new SendPassword($mailData));
+
+        $user = User::where('id', $request->id)->first();
+        if ($user) {
+            $user->password = Hash::make($password);
+            $user->save();
+           
+        }
+
+        return redirect()->back();
     }
 }

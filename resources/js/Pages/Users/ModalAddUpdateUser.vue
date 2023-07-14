@@ -35,7 +35,8 @@ let userInfo = useForm({
   role: "user",
   email: "",
   status: false,
-  photo:null
+  photo:null,
+  id:null
 });
 const photoInput = ref(null);
 const photoPreview = ref(null);
@@ -76,6 +77,14 @@ const submit =  () => {
   $emit("save", userInfo);
   clearPhotoFileInput()
 };
+const onChangePassword = () => {
+  userInfo.post(route('change-password'));
+}
+
+const deletePhoto = ()=>{
+  clearPhotoFileInput()
+  photoPreview.value = 'images/profile.png'
+}
 </script>
 <template>
   <DialogPanel
@@ -144,7 +153,7 @@ const submit =  () => {
             </div>
           </div>
           <div class="w-60">
-            <DangerButton class="ml-0" type="submit">
+            <DangerButton class="ml-0" type="button" @click="deletePhoto">
               Supprimer la photo
             </DangerButton>
           </div>
@@ -288,7 +297,7 @@ const submit =  () => {
               <InputError :message="userInfo.errors?.email" />
             </div>
             <div class="w-60">
-              <DangerButton class="ml-0 mt-[30px]" type="submit">
+              <DangerButton class="ml-0 mt-[30px]" type="submit" v-if="props.user?.id" @click="onChangePassword">
                 Changer de mot de passe
               </DangerButton>
             </div>
